@@ -7,10 +7,13 @@ from numpy.linalg import norm
 import matplotlib
 from matplotlib.colors import LinearSegmentedColormap
 import pickle
-from scipy.ndimage import label
+
+# from scipy.ndimage import label
 from os import path
 
+
 matplotlib.use("tkagg")
+
 
 COLOR_RESOLUTION = 256
 COLOR_DISCRETIZATION = 25
@@ -118,7 +121,8 @@ def assign_closer_color(original_image, color_list):
 
 
 def analyze_islands(sliced_image):
-    labels, num_labels = label(sliced_image + 1)
+    #    labels, num_labels = label(sliced_image + 1)
+    pass
 
 
 if __name__ == "__main__":
