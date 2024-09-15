@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from tqdm import tqdm
 from scipy import stats
+import os
 
 
 if __name__ == "__main__":
-    img = Image.open("picture4.jpg")
+    img = Image.open(os.getcwd() + "/other/picture4.jpg")
     rgb = img.load()
     img_shape = img.size
     pixels_count = img_shape[0] * img_shape[1]
@@ -57,10 +58,10 @@ if __name__ == "__main__":
         "custom cmap", discr_colors, np.shape(discr_colors)[0]
     )
 
-    plt.pcolormesh(discr_img, cmap=cmap)
+    plt.pcolormesh(discr_img.T, cmap=cmap)
     plt.show()
 
-    plt.contour(discr_img, colors="k")
+    plt.contour(discr_img.T, colors="k")
     plt.show()
 
     print("stop here")

@@ -106,9 +106,9 @@ def plot_peaks_reduction_timetrace(times_peaks):
 
 def plot_sliced_image(color_map, sliced_image):
     cmap = mpl.colors.LinearSegmentedColormap.from_list(
-        "custom cmap", color_map, np.shape(color_map)[0]
+        "custom cmap", color_map / 256, np.shape(color_map)[0]
     )
-    plt.pcolormesh(sliced_image, cmap=cmap)
+    plt.pcolormesh(np.flip(sliced_image.T, axis=0), cmap=cmap)
     plt.show()
 
 

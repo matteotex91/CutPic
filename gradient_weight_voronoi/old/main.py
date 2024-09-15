@@ -85,12 +85,11 @@ def plot_peaks_reduction_timetrace(times_peaks):
 
 
 def plot_sliced_image(color_map, sliced_image):
-    # cmap = mpl.colors.LinearSegmentedColormap.from_list(
-    #    "custom cmap", color_map, np.shape(color_map)[0]
-    # )
-    # plt.pcolormesh(sliced_image, cmap=cmap)
-    # plt.show()
-    ...
+    cmap = mpl.colors.LinearSegmentedColormap.from_list(
+        "custom cmap", color_map / 256, np.shape(color_map)[0]
+    )
+    plt.pcolormesh(np.flip(sliced_image.T, axis=0), cmap=cmap)
+    plt.show()
 
 
 def assign_closer_color(original_image, color_list):
@@ -118,7 +117,8 @@ if __name__ == "__main__":
 
     if os.path.exists(preprocess_path):
         with open(preprocess_path, "rb") as f:
-            sliced_image = pickle.load(f)
+            sliced_image, color_map = pickle.load(f)
+
     else:
 
         flag_max_count_achieved = False
@@ -171,8 +171,9 @@ if __name__ == "__main__":
         sliced_image = assign_closer_color(rgb, sorted_color_map)
 
         with open(preprocess_path, "wb") as f:
-            pickle.dump(sliced_image, f)
+            pickle.dump((sliced_image, color_map), f)
 
+    plot_sliced_image(color_map, sliced_image)
     plt.contour(np.flip(sliced_image.T, axis=0), colors="k")
     plt.show()
     print("stop here")

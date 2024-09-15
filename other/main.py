@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from tqdm import tqdm
+import os
 
 max_color = 255
 zero_range = max_color / 6
@@ -45,7 +46,7 @@ def project_colors(c_r, c_g, c_b, mat, threshold):
 
 
 if __name__ == "__main__":
-    img = Image.open("picture4.jpg")
+    img = Image.open(os.getcwd() + "/other/picture4.jpg")
     rgb = img.load()
     img_shape = img.size
     pixels_count = img_shape[0] * img_shape[1]
