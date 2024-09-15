@@ -4,21 +4,16 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from time import time
 from numpy.linalg import norm
-import matplotlib
-from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
 import pickle
 
-# from scipy.ndimage import label
-from os import path
+import os
 
-
-matplotlib.use("tkagg")
-
+mpl.use("tkagg")
 
 COLOR_RESOLUTION = 256
 COLOR_DISCRETIZATION = 24
 RELAXATION_SPEED = 0.1
-
 
 """Produces a map of boolean having the same shape as the argument array, which is three dimensional.
 Each element of this list is true if all the neighbors are smaller, false otherwise.
@@ -83,24 +78,15 @@ def plot_peaks_reduction_timetrace(times_peaks):
     plt.ylabel("peaks count [-]")
     plt.grid(True)
     plt.yscale("log")
-    plt.xscale("log")
     plt.show()
 
 
 def plot_sliced_image(color_map, sliced_image):
-    cmap = LinearSegmentedColormap.from_list(
-        "custom cmap", color_map / 256, np.shape(color_map)[0]
+    cmap = mpl.colors.LinearSegmentedColormap.from_list(
+        "custom cmap", color_map, np.shape(color_map)[0]
     )
-    plt.pcolormesh(np.flip(sliced_image.T, axis=0), cmap=cmap)
+    plt.pcolormesh(sliced_image, cmap=cmap)
     plt.show()
-
-    plt.contour(np.flip(sliced_image.T, axis=0), colors="k")
-    plt.show()
-
-
-"""This function creates a new array having the same number of pixels of the original one.
-It associates to each pixel an ID of the color in the list having the least distance (in the RGB space) to the current color of the pixel
-"""
 
 
 def assign_closer_color(original_image, color_list):
@@ -120,97 +106,71 @@ def assign_closer_color(original_image, color_list):
     )
 
 
-def analyze_islands(sliced_image):
-    #    labels, num_labels = label(sliced_image + 1)
-    pass
-
-
-
-#    blurred_rgb_hist = np.copy(rgb_hist)
-#    backup_hist = np.copy(rgb_hist)
-#    times_peaks_list = []
-#    t0 = time()
-
-#    while not flag_max_count_achieved:
-#        peaks_count = get_peaks_count(blurred_rgb_hist)
-
-#        if peaks_count <= COLOR_DISCRETIZATION:
-            break
-
- #       blurred_rgb_hist = np.divide(blurred_rgb_hist, np.sum(blurred_rgb_hist))
-
-  #      backup_hist = np.copy(blurred_rgb_hist)
-
- #       blurred_rgb_hist -= edge_padded_laplacian(blurred_rgb_hist) * RELAXATION_SPEED
-
- #       print(peaks_count)
- #       times_peaks_list.append(np.array([time() - t0, peaks_count]))
-
-#    plot_peaks_reduction_timetrace(np.array(times_peaks_list))
-
-#    final_hist = backup_hist if peaks_count < COLOR_DISCRETIZATION else blurred_rgb_hist
-
-#    color_map = get_peaks_color(final_hist)
-
-#    hist_values = np.array([final_hist[tuple(c)] for c in color_map])
-
-    #sorted_color_map = np.array([c for _, c in sorted(zip(hist_values, color_map))])[
-    #    -COLOR_DISCRETIZATION:
-   # ]
-
-  #  sliced_image = assign_closer_color(rgb, sorted_color_map)
-
- #   print("stop here")
 if __name__ == "__main__":
-    picture_path = "voronoi/picture.jpg"
-    analysis_path = "voronoi/analysis.pickle"
-    flag_load_analysis = True
+    folder = os.getcwd() + "/gradient_weight_voronoi/old/"
+    rgb = np.asarray(Image.open(os.getcwd() + "/picture.jpg"))
 
-    if flag_load_analysis and path.exists("voronoi/analysis.pickle"):
-        with open(analysis_path, "rb") as f:
-            datadict = pickle.load(f)
-        sorted_color_map = datadict["sorted_color_map"]
-        sliced_image = datadict["sliced_image"]
-        times_peaks_list = datadict["times_peaks_list"]
+    if os.path.exists(folder + "preprocess.pickle"):
+        with open(
+            os.getcwd() + "/gradient_weight_voronoi/preprocess.pickle", "rb"
+        ) as f:
+            sliced_image = pickle.load(f)
     else:
-        rgb = np.asarray(Image.open(picture_path))
+
         flag_max_count_achieved = False
+
         rgb_list = np.reshape(np.reshape(rgb, (1, -1, 3)), (-1, 3))
+
         rgb_hist = np.zeros((COLOR_RESOLUTION, COLOR_RESOLUTION, COLOR_RESOLUTION))
+
+        np.random.rand
+
         for pix in tqdm(rgb_list):
             rgb_hist[tuple(pix)] += 1
+
         blurred_rgb_hist = np.copy(rgb_hist)
         backup_hist = np.copy(rgb_hist)
         times_peaks_list = []
         t0 = time()
+
         while not flag_max_count_achieved:
             peaks_count = get_peaks_count(blurred_rgb_hist)
+
             if peaks_count <= COLOR_DISCRETIZATION:
                 break
+
             blurred_rgb_hist = np.divide(blurred_rgb_hist, np.sum(blurred_rgb_hist))
+
             backup_hist = np.copy(blurred_rgb_hist)
+
             blurred_rgb_hist -= (
                 edge_padded_laplacian(blurred_rgb_hist) * RELAXATION_SPEED
             )
+
+            print(peaks_count)
             times_peaks_list.append(np.array([time() - t0, peaks_count]))
+
+        plot_peaks_reduction_timetrace(np.array(times_peaks_list))
+
         final_hist = (
             backup_hist if peaks_count < COLOR_DISCRETIZATION else blurred_rgb_hist
         )
+
         color_map = get_peaks_color(final_hist)
+
         hist_values = np.array([final_hist[tuple(c)] for c in color_map])
+
         sorted_color_map = np.array(
             [c for _, c in sorted(zip(hist_values, color_map))]
         )[-COLOR_DISCRETIZATION:]
+
         sliced_image = assign_closer_color(rgb, sorted_color_map)
-        with open("voronoi/analysis.pickle", "wb") as f:
-            pickle.dump(
-                {
-                    "sliced_image": sliced_image,
-                    "sorted_color_map": sorted_color_map,
-                    "times_peaks_list": times_peaks_list,
-                },
-                f,
-            )
-    plot_peaks_reduction_timetrace(np.array(times_peaks_list))
-    plot_sliced_image(sorted_color_map, sliced_image)
-    analyze_islands(sliced_image)
+
+        with open(
+            os.getcwd() + "/gradient_weight_voronoi/preprocess.pickle", "wb"
+        ) as f:
+            pickle.dump(sliced_image, f)
+
+    plt.contour(sliced_image, colors="k")
+    plt.show()
+    print("stop here")
