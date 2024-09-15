@@ -42,6 +42,26 @@ def get_peaks_bool_map(array: np.ndarray):
     )
 
 
+def gradients(rgb: np.ndarray) -> np.ndarray:
+    padded = np.pad(rgb, ((2, 2), (2, 2), (0, 0)), "edge")
+    return np.linalg.norm(
+        (
+            np.abs(padded[2:, 1:-1, :] - padded[1:-1, 1:-1, :])
+            + np.abs(padded[:-2, 1:-1, :] - padded[1:-1, 1:-1, :])
+            + np.abs(padded[1:-1, 2:, :] - padded[1:-1, 1:-1, :])
+            + np.abs(padded[1:-1, :-2, :] - padded[1:-1, 1:-1, :])
+        ),
+        axis=2,
+    )
+
+
+WIDTH = 1
+
+
+def hist_weight_from_gradient(gradient):
+    return np.exp(-((gradient / WIDTH) ** 2))
+
+
 """ This function counts the peaks of the argument array, based on the get_peaks_bool_map function
 """
 
@@ -85,12 +105,11 @@ def plot_peaks_reduction_timetrace(times_peaks):
 
 
 def plot_sliced_image(color_map, sliced_image):
-    # cmap = mpl.colors.LinearSegmentedColormap.from_list(
-    #    "custom cmap", color_map, np.shape(color_map)[0]
-    # )
-    # plt.pcolormesh(sliced_image, cmap=cmap)
-    # plt.show()
-    ...
+    cmap = mpl.colors.LinearSegmentedColormap.from_list(
+        "custom cmap", color_map, np.shape(color_map)[0]
+    )
+    plt.pcolormesh(sliced_image, cmap=cmap)
+    plt.show()
 
 
 def assign_closer_color(original_image, color_list):
@@ -112,25 +131,25 @@ def assign_closer_color(original_image, color_list):
 
 if __name__ == "__main__":
     pic_path = os.getcwd() + "/picture.jpg"
-    folder = os.getcwd() + "/gradient_weight_voronoi/old/"
-    preprocess_path = os.getcwd() + "/gradient_weight_voronoi/old/preprocess.pickle"
+    folder = os.getcwd() + "/gradient_weight_voronoi/new/"
+    preprocess_path = os.getcwd() + "/gradient_weight_voronoi/new/preprocess.pickle"
     rgb = np.asarray(Image.open(pic_path))
 
     if os.path.exists(preprocess_path):
         with open(preprocess_path, "rb") as f:
-            sliced_image = pickle.load(f)
+            sliced_image, color_map = pickle.load(f)
     else:
 
         flag_max_count_achieved = False
+
+        grad_list = np.reshape(gradients(rgb), (-1, 1))
 
         rgb_list = np.reshape(np.reshape(rgb, (1, -1, 3)), (-1, 3))
 
         rgb_hist = np.zeros((COLOR_RESOLUTION, COLOR_RESOLUTION, COLOR_RESOLUTION))
 
-        np.random.rand
-
-        for pix in tqdm(rgb_list):
-            rgb_hist[tuple(pix)] += 1
+        for pix, grad in tqdm(zip(rgb_list, grad_list)):
+            rgb_hist[tuple(pix)] += hist_weight_from_gradient(grad)
 
         blurred_rgb_hist = np.copy(rgb_hist)
         backup_hist = np.copy(rgb_hist)
@@ -171,8 +190,9 @@ if __name__ == "__main__":
         sliced_image = assign_closer_color(rgb, sorted_color_map)
 
         with open(preprocess_path, "wb") as f:
-            pickle.dump(sliced_image, f)
+            pickle.dump((sliced_image, color_map), f)
 
+    plot_sliced_image(color_map, sliced_image)
     plt.contour(np.flip(sliced_image.T, axis=0), colors="k")
     plt.show()
     print("stop here")
