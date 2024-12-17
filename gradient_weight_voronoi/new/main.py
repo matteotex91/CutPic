@@ -5,13 +5,14 @@ from tqdm import tqdm
 from time import time
 from numpy.linalg import norm
 import matplotlib as mpl
+from matplotlib.backend_bases import KeyEvent
 import pickle
 
 import os
 
 
 """
-problem with this method : no informations on the spatial correlation of the pixels
+
 """
 
 COLOR_RESOLUTION = 256
@@ -21,6 +22,70 @@ RELAXATION_SPEED = 0.1
 """Produces a map of boolean having the same shape as the argument array, which is three dimensional.
 Each element of this list is true if all the neighbors are smaller, false otherwise.
 """
+
+
+def voronoi_analyze(color_map, sliced_image, force_reprocess=False):
+    voronoi_analysis_path = os.path.join(os.path.dirname(__file__), "voronoi.pickle")
+    color_list = np.unique(sliced_image)
+    color_counts = np.array([np.sum(sliced_image == col) for col in color_list])
+    if os.path.exists(voronoi_analysis_path) and not force_reprocess:
+        with open(voronoi_analysis_path, "rb") as f:
+            voronoi_datadict = pickle.load(f)
+        voronoi_color_space = voronoi_datadict["voronoi_color_space"]
+        voronoi_color_histogram = voronoi_datadict["voronoi_color_histogram"]
+    else:
+        voronoi_color_space = np.array(
+            [
+                [
+                    [
+                        np.argmin(np.linalg.norm(color_map - [cx, cy, cz], axis=1))
+                        for cx in range(COLOR_RESOLUTION)
+                    ]
+                    for cy in range(COLOR_RESOLUTION)
+                ]
+                for cz in tqdm(range(COLOR_RESOLUTION))
+            ]
+        )
+        voronoi_color_histogram = np.array(
+            [
+                np.sum(voronoi_color_space == col)
+                for col in np.unique(voronoi_color_space)
+            ]
+        )
+
+        with open(voronoi_analysis_path, "wb") as f:
+            pickle.dump(
+                {
+                    "voronoi_color_space": voronoi_color_space,
+                    "voronoi_color_histogram": voronoi_color_histogram,
+                },
+                f,
+            )
+    # interactive plot of the slices in the rgb plane
+    global fig, ax, B
+    fig, ax = plt.subplots()
+    B = 0
+
+    def on_release(event: KeyEvent) -> None:
+        global B
+        print(B)
+        if event.key == "up":
+            B = min(B + 1, COLOR_RESOLUTION)
+        elif event.key == "down":
+            B = max(B - 1, 0)
+        redraw()
+
+    def redraw():
+        global fig, ax, B
+        plt.cla()
+        ax.pcolormesh(voronoi_color_space[:, :, B])
+        fig.show()
+
+    conn_id = fig.canvas.mpl_connect("key_release_event", on_release)
+    redraw()
+    plt.show()
+    fig.canvas.mpl_disconnect(conn_id)
+    print("stop here")
 
 
 def get_peaks_bool_map(array: np.ndarray):
@@ -192,6 +257,7 @@ if __name__ == "__main__":
         with open(preprocess_path, "wb") as f:
             pickle.dump((sliced_image, color_map), f)
 
+    voronoi_analyze(color_map, sliced_image)
     plot_sliced_image(color_map, sliced_image)
     plt.contour(np.flip(sliced_image.T, axis=0), colors="k")
     plt.show()
