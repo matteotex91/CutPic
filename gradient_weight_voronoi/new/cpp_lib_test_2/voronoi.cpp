@@ -4,6 +4,7 @@
 
 // compile command :
 // g++ -shared -o voronoi.so -fPIC voronoi.cpp
+// this method calculates L1,L2...LN norms of a nd vector. The N maximum degree of the norms is max_p parameter
 
 extern "C" void vector_norms(const double* vec, size_t length, size_t max_p, double* norms) {
     for (size_t p = 1; p <= max_p; ++p) {

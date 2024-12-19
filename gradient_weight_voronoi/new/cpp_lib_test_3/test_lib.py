@@ -49,6 +49,7 @@ t0 = time()
 #             voronoi_map[ix, iy, iz] = wrapped_voronoi_map_ptr[
 #                 ix + COLOR_RESOLUTION * (iy + COLOR_RESOLUTION * iz)
 #             ]
+
 voronoi_map = np.reshape(
     np.ravel(wrapped_voronoi_map),
     newshape=(COLOR_RESOLUTION, COLOR_RESOLUTION, COLOR_RESOLUTION),

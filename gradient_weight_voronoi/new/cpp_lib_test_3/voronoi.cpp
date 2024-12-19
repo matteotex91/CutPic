@@ -4,6 +4,7 @@
 
 // compile command :
 // g++ -shared -o voronoi.so -fPIC voronoi.cpp
+// this method calculates the voronoi map given a certain number of vectors in the RGB space
 
 extern "C" void voronoi(const int* R,const int* G, const int* B, size_t point_count, size_t color_resolution, int* wrapped_voronoi_map) {
     int diff_r=0;
